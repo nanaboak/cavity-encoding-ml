@@ -2,7 +2,7 @@
 
 Cavity encoding and leakage-safe validation for machine learning on multi-cavity injection molding data.
 
-[![Tests](https://github.com/YOUR-GITHUB-USERNAME/cavity-encoding-ml/actions/workflows/tests.yml/badge.svg)](https://github.com/YOUR-GITHUB-USERNAME/cavity-encoding-ml/actions/workflows/tests.yml)
+[![Tests](https://github.com/nanaboak/cavity-encoding-ml/actions/workflows/tests.yml/badge.svg)](https://github.com/nanaboak/cavity-encoding-ml/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A multi-cavity mold forms several parts in every machine cycle (a *shot*). When you predict part quality from process data, three questions come up.
@@ -29,7 +29,7 @@ pip install cavity-encoding-ml
 Before the release is on PyPI you can install from GitHub:
 
 ```bash
-pip install "git+https://github.com/YOUR-GITHUB-USERNAME/cavity-encoding-ml.git"
+pip install "git+https://github.com/nanaboak/cavity-encoding-ml.git"
 ```
 
 Python 3.9 or newer. The core needs only NumPy, pandas, SciPy and scikit-learn. Figures need `pip install matplotlib`.
