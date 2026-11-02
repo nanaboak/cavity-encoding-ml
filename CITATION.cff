@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "cavity-encoding-ml"
+type: software
+version: 0.1.0
+date-released: 2026-11-02
+license: MIT
+repository-code: "https://github.com/YOUR-GITHUB-USERNAME/cavity-encoding-ml"
+authors:
+  - family-names: Boakye
+    given-names: Prince Nana
+    affiliation: "Sunway University"
+  - family-names: Hafizh
+    given-names: Hadyan
+    affiliation: "Sunway University"
+  - family-names: Lohar
+    given-names: Pintu
+    affiliation: "Sunway University"
+  - family-names: Abdul Majeed
+    given-names: Anwar P. P.
+    affiliation: "Sunway University"
+abstract: "A Python package that guides cavity encoding and leakage-safe validation for machine learning on multi-cavity injection molding data."
+keywords:
+  - injection molding
+  - multi-cavity mold
+  - machine learning
+  - categorical encoding
+  - data leakage
