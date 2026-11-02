@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [
-  { name = "Prince Nana Boakye" },
+  { name = "Prince Nana Boakye", email = "bilalprince1723@gmail.com" },
   { name = "Hadyan Hafizh" },
   { name = "Pintu Lohar" },
   { name = "Anwar P. P. Abdul Majeed", email = "anwarm@sunway.edu.my" },
@@ -43,9 +43,9 @@ dev = ["pytest>=7", "matplotlib>=3.5"]
 cavity-encoding-ml = "cavity_encoding_ml.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/YOUR-GITHUB-USERNAME/cavity-encoding-ml"
-Issues = "https://github.com/YOUR-GITHUB-USERNAME/cavity-encoding-ml/issues"
-Changelog = "https://github.com/YOUR-GITHUB-USERNAME/cavity-encoding-ml/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/nanaboak/cavity-encoding-ml"
+Issues = "https://github.com/nanaboak/cavity-encoding-ml/issues"
+Changelog = "https://github.com/nanaboak/cavity-encoding-ml/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]
