@@ -4,7 +4,7 @@ Thank you for helping to improve `cavity-encoding-ml`. Bug reports, questions, i
 
 ## Report a problem or ask a question
 
-Open an issue at https://github.com/YOUR-GITHUB-USERNAME/cavity-encoding-ml/issues. Please add the following.
+Open an issue at https://github.com/nanaboak/cavity-encoding-ml/issues. Please add the following.
 
 - What you did, with a small piece of code or data that shows the problem.
 - What you expected, and what happened instead.
