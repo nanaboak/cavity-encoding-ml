@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Confidential production data must never be uploaded
+*_TrainingData.csv
+*_CAQdata*
+Training/
+Training_complete/
+
+# Paper build output
+paper/paper.pdf
+paper/paper.jats/
+paper/*.aux
+
+# Editors and system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
