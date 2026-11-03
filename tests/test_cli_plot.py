@@ -6,7 +6,7 @@ from cavity_encoding_ml import cli
 def test_version(capsys):
     with pytest.raises(SystemExit):
         cli.main(["--version"])
-    assert "0.1.0" in capsys.readouterr().out
+    assert "0.2.0" in capsys.readouterr().out
 
 
 def test_example_runs(capsys):

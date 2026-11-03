@@ -83,6 +83,10 @@ class CavityWorkflow:
         Settings of the F test.
     response_unit : str
         Unit text for the report.
+    arms : tuple of str
+        Models trained for the comparison. Default ``("blind", "encoded")``, which is all
+        the decision needs. Add ``"readings"`` to also train R1, the cavity readings
+        without the label.
     """
 
     def __init__(
@@ -97,6 +101,7 @@ class CavityWorkflow:
         min_partial_eta2: float = 0.01,
         response_unit: str = "",
         always_validate: bool = False,
+        arms=("blind", "encoded"),
     ):
         self.config = config
         self.model = model
@@ -108,6 +113,13 @@ class CavityWorkflow:
         self.min_partial_eta2 = min_partial_eta2
         self.response_unit = response_unit
         self.always_validate = always_validate
+        self.arms = (arms,) if isinstance(arms, str) else tuple(arms)
+        if "blind" not in self.arms or "encoded" not in self.arms:
+            raise ValueError(
+                "The decision compares the encoded model with the cavity-blind model, so arms "
+                "must contain 'blind' and 'encoded'. Add 'readings' to also see R1. To only "
+                "train one model with the label, use validate_cavity_encoding(arms=('encoded',))."
+            )
 
     @classmethod
     def from_config(cls, path: str, model, **kwargs) -> "CavityWorkflow":
@@ -126,7 +138,8 @@ class CavityWorkflow:
         audit = None
         if diag.passed or self.always_validate:
             validation = validate_cavity_encoding(
-                data, cfg, self.model, encoding=encoding, cv=self.cv, response_unit=self.response_unit
+                data, cfg, self.model, encoding=encoding, cv=self.cv, response_unit=self.response_unit,
+                arms=self.arms,
             )
             if self.audit_kfold:
                 audit = leakage_audit(data, cfg, self.model)

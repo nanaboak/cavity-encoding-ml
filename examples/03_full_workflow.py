@@ -9,7 +9,8 @@ workflow = CavityWorkflow(
     tip_example_config(),
     RandomForestRegressor(n_estimators=200, random_state=42, n_jobs=1),
     encoding="onehot",     # or "target", "integer", "auto"
-    audit_kfold=True,      # also show how much ordinary K-fold would flatter the model
+    # arms=("blind", "readings", "encoded"),   # also train R1, the readings without the label
+    # audit_kfold=True,                         # also show how much ordinary K-fold would flatter the model
     response_unit="mm",
 )
 result = workflow.run(load_tip_example())

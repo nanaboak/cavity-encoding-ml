@@ -45,7 +45,8 @@ def run(name, path):
     print(f"\n{'#' * 70}\n{name}: {len(df)} parts after the outlier screen ({(~keep).sum()} removed)\n{'#' * 70}")
     cfg = CavityConfig(shot="ID_Zk", cavity="CavityNumber", response="Value",
                        shared=SETS[name]["shared"], sensors=SENSORS, cavities=[1, 2, 3, 4])
-    res = CavityWorkflow(cfg, _default_model(), audit_kfold=True, response_unit=SETS[name]["unit"]).run(df)
+    res = CavityWorkflow(cfg, _default_model(), audit_kfold=True,
+                       arms=("blind", "readings", "encoded"), response_unit=SETS[name]["unit"]).run(df)
     print(res.report(SETS[name]["unit"]))
     return res
 

@@ -14,6 +14,7 @@ from .models import make_model
 from .splitting import RepeatedRowKFold, ShotGroupKFold, check_splits, sibling_share
 
 _ENC_TO_REP = {"integer": "R2", "onehot": "R3", "target": "R4"}
+_ARM_REP = {"blind": "R0", "readings": "R1", "encoded": None}
 
 
 @dataclass
@@ -69,11 +70,13 @@ class ValidationResult:
 
     @property
     def jitter(self) -> float:
-        """Fold-to-fold jitter of the cavity-blind model."""
-        return self.blind.jitter
+        """Fold-to-fold jitter of the cavity-blind model (nan when the blind arm was not run)."""
+        return self.blind.jitter if "blind" in self.arms else float("nan")
 
     def gain(self, arm: str = "encoded") -> float:
-        """Relative RMSE reduction of ``arm`` against the cavity-blind model."""
+        """Relative RMSE reduction of ``arm`` against the cavity-blind model (nan without it)."""
+        if "blind" not in self.arms:
+            return float("nan")
         return float(1.0 - self.arms[arm].rmse / self.blind.rmse)
 
     def report(self) -> str:
@@ -87,20 +90,25 @@ class ValidationResult:
                 "  ALERT. The folds are not grouped by shot, so the RMSE below is too optimistic."
                 " Use ShotGroupKFold for a multi-cavity mold."
             )
-        lines.append(f"  {'model input':<34}{'RMSE' + u:>14}{'gain vs blind':>16}")
+        show_gain = "blind" in self.arms
+        head = f"  {'model input':<34}{'RMSE' + u:>14}"
+        lines.append(head + (f"{'gain vs blind':>16}" if show_gain else ""))
         labels = {
             "blind": "R0 cavity-blind",
             "readings": "R1 cavity readings, no label",
             "encoded": f"{self.encoded.representation} + {self.encoding} label",
         }
         for key in ("blind", "readings", "encoded"):
+            if key not in self.arms:
+                continue
             a = self.arms[key]
-            g = "" if key == "blind" else f"{100 * self.gain(key):+.1f} %"
+            g = "" if (key == "blind" or not show_gain) else f"{100 * self.gain(key):+.1f} %"
             lines.append(f"  {labels[key]:<34}{a.rmse:>14.4g}{g:>16}")
-        lines.append(
-            f"  fold-to-fold jitter of the blind model: {100 * self.jitter:.1f} % "
-            f"(SD {self.blind.fold_std:.3g} / mean {self.blind.fold_mean:.3g})"
-        )
+        if show_gain:
+            lines.append(
+                f"  fold-to-fold jitter of the blind model: {100 * self.jitter:.1f} % "
+                f"(SD {self.blind.fold_std:.3g} / mean {self.blind.fold_mean:.3g})"
+            )
         return "\n".join(lines)
 
     def __str__(self) -> str:  # pragma: no cover - convenience
@@ -146,6 +154,7 @@ def validate_cavity_encoding(
     smoothing: float = 10.0,
     response_unit: str = "",
     warn: bool = True,
+    arms=("blind", "readings", "encoded"),
 ) -> ValidationResult:
     """Validate a model with and without the cavity label on identical folds.
 
@@ -164,25 +173,35 @@ def validate_cavity_encoding(
         Any object with ``split(X, y, groups)``. Default ``ShotGroupKFold(4, 3, 42)``.
         A split that puts parts of one shot on both sides triggers a
         ``LeakageWarning``.
+    arms : tuple of str
+        Which models to train. Any of ``"blind"`` (R0), ``"readings"`` (R1) and
+        ``"encoded"``. Default all three, as in version 0.1. Use
+        ``("blind", "encoded")`` to compare with and without the label, or
+        ``("encoded",)`` to only cross-validate the model with the encoded label.
     """
     if encoding == "auto":
         encoding = choose_encoding(len(config.cavities or np.unique(data[config.cavity])))
     if encoding not in _ENC_TO_REP:
         raise ValueError(f"encoding must be one of {list(_ENC_TO_REP)} or 'auto'.")
+    wanted = (arms,) if isinstance(arms, str) else tuple(arms)
+    unknown = [a for a in wanted if a not in _ARM_REP]
+    if unknown or not wanted:
+        raise ValueError(f"arms must be a non-empty subset of {list(_ARM_REP)}, got {list(wanted)}.")
     df = data.reset_index(drop=True)
     y = df[config.response].to_numpy(dtype=float)
     groups = df[config.shot].to_numpy()
     cv = cv if cv is not None else ShotGroupKFold(4, 3, 42)
     splits = list(cv.split(df, y, groups))
     share = check_splits(groups, splits) if warn else sibling_share(groups, splits)
-    arms = {
-        "blind": _run_arm(df, y, config, "R0", model, splits, smoothing, "blind"),
-        "readings": _run_arm(df, y, config, "R1", model, splits, smoothing, "readings"),
-        "encoded": _run_arm(df, y, config, _ENC_TO_REP[encoding], model, splits, smoothing, "encoded"),
+    rep_of = dict(_ARM_REP, encoded=_ENC_TO_REP[encoding])
+    results = {
+        key: _run_arm(df, y, config, rep_of[key], model, splits, smoothing, key)
+        for key in _ARM_REP
+        if key in wanted
     }
     return ValidationResult(
         encoding=encoding,
-        arms=arms,
+        arms=results,
         n_folds=len(splits),
         leakage_share=share,
         grouped=_is_grouped(share),

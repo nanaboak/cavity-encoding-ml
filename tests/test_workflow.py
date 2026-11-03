@@ -76,3 +76,22 @@ def test_bundled_example_passes_diagnostic():
     df = load_tip_example()
     d = cavity_diagnostic(df.Value, df.ID_Zk, df.CavityNumber)
     assert d.passed and d.F > 100 and 0.4 < d.separation < 0.65
+
+
+def test_workflow_default_is_lean(toy, toy_cfg):
+    rf = RandomForestRegressor(n_estimators=20, random_state=0)
+    r = CavityWorkflow(toy_cfg, rf).run(toy)
+    assert set(r.validation.arms) == {"blind", "encoded"}
+    assert "R1" not in r.report() and "Leakage audit" not in r.report()
+
+
+def test_workflow_with_readings(toy, toy_cfg):
+    rf = RandomForestRegressor(n_estimators=20, random_state=0)
+    r = CavityWorkflow(toy_cfg, rf, arms=("blind", "readings", "encoded")).run(toy)
+    assert "R1 cavity readings" in r.report()
+
+
+def test_workflow_needs_blind_and_encoded(toy_cfg):
+    import pytest
+    with pytest.raises(ValueError):
+        CavityWorkflow(toy_cfg, RandomForestRegressor(), arms=("encoded",))

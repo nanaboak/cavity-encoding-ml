@@ -119,3 +119,31 @@ def test_pooled_rmse_matches_oof(toy, toy_cfg, ridge):
     v = validate_cavity_encoding(toy, toy_cfg, ridge)
     resid = toy.y.to_numpy() - v.blind.oof
     assert v.blind.rmse == pytest.approx(np.sqrt(np.mean(resid**2)))
+
+
+def test_arms_encoded_only(toy, toy_cfg, rf):
+    v = validate_cavity_encoding(toy, toy_cfg, rf, arms=("encoded",))
+    assert list(v.arms) == ["encoded"] and v.n_folds == 12
+    assert v.leakage_share == 0.0 and v.grouped
+    assert np.isnan(v.jitter) and np.isnan(v.gain())
+    text = v.report()
+    assert "onehot label" in text and "gain vs blind" not in text and "jitter" not in text
+
+
+def test_arms_blind_and_encoded(toy, toy_cfg, rf):
+    v = validate_cavity_encoding(toy, toy_cfg, rf, arms=("blind", "encoded"))
+    assert list(v.arms) == ["blind", "encoded"]
+    assert "readings" not in v.report() and v.jitter > 0
+
+
+def test_arms_match_full_run(toy, toy_cfg, rf):
+    full = validate_cavity_encoding(toy, toy_cfg, rf)
+    lean = validate_cavity_encoding(toy, toy_cfg, rf, arms=("blind", "encoded"))
+    assert lean.blind.rmse == full.blind.rmse and lean.encoded.rmse == full.encoded.rmse
+
+
+def test_arms_invalid(toy, toy_cfg, rf):
+    with pytest.raises(ValueError):
+        validate_cavity_encoding(toy, toy_cfg, rf, arms=("blind", "nonsense"))
+    with pytest.raises(ValueError):
+        validate_cavity_encoding(toy, toy_cfg, rf, arms=())

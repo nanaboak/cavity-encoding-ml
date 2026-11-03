@@ -62,12 +62,26 @@ config = CavityConfig(
     cavities=[1, 2, 3, 4],
 )
 
-result = CavityWorkflow(config, RandomForestRegressor(random_state=0), audit_kfold=True).run(df)
+result = CavityWorkflow(config, RandomForestRegressor(random_state=0)).run(df)
 print(result.report())
 print(result.verdict)                      # "use_cavity", "adds_noise" or "no_cavity_effect"
 ```
 
+The workflow trains the model twice on identical shot-grouped folds, without and with the cavity label, and then decides. Add `arms=("blind", "readings", "encoded")` to also see the cavity readings without the label (R1), and `audit_kfold=True` to also measure how much ordinary K-fold would flatter the result. Both are optional and cost extra training time.
+
 If your data have no cavity sensors, leave `sensors` empty. The package then compares the model with and without the cavity label alone.
+
+## Only train a model with the cavity label
+
+If you only want the library to build the features and cross-validate one model, without any comparison:
+
+```python
+from cavity_encoding_ml import validate_cavity_encoding
+
+v = validate_cavity_encoding(df, config, RandomForestRegressor(random_state=0),
+                             encoding="onehot", arms=("encoded",))
+print(v.encoded.rmse, v.encoded.r2)        # one model, shot-grouped folds, leakage check included
+```
 
 ## Any machine learning library
 
@@ -84,7 +98,7 @@ validate_cavity_encoding(df, config, FunctionModel(my_fit, my_predict))  # PyTor
 | Folder or file | Content |
 |---|---|
 | `src/cavity_encoding_ml/` | The package |
-| `tests/` | 131 automatic tests |
+| `tests/` | 138 automatic tests |
 | `docs/` | Beginner guide, tutorial, method and API reference |
 | `examples/` | Six small scripts that run as they are |
 | `scripts/` | Verification against the original code, reproduction on private data, synthetic data, figure |

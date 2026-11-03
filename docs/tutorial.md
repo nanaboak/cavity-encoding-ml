@@ -39,7 +39,7 @@ v = validate_cavity_encoding(df, config, RandomForestRegressor(random_state=0), 
 print(v.report())
 ```
 
-The package trains a fresh copy of your model three times on identical folds: the cavity-blind baseline (R0), the cavity readings without the label (R1) and the encoded label. This shows whether the label adds anything beyond the cavity sensors.
+`validate_cavity_encoding` trains a fresh copy of your model on identical folds for each entry of `arms`. The default is three: the cavity-blind baseline (R0), the cavity readings without the label (R1) and the encoded label, which shows whether the label adds anything beyond the cavity sensors. Use `arms=("blind", "encoded")` when you only need the decision, or `arms=("encoded",)` when you only want one cross-validated model with the label. `CavityWorkflow` uses `("blind", "encoded")` by default.
 
 The default splitter is `ShotGroupKFold(n_splits=4, n_repeats=3, random_state=42)`. Pass `cv=` to use another one. If it separates the parts of a shot, a `LeakageWarning` is raised.
 

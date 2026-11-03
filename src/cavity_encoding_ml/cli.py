@@ -27,7 +27,8 @@ def _default_model():
 
 def _cmd_example(args):
     data, cfg = load_tip_example(), tip_example_config()
-    res = CavityWorkflow(cfg, _default_model(), encoding=args.encoding, audit_kfold=True, response_unit="mm").run(data)
+    res = CavityWorkflow(cfg, _default_model(), encoding=args.encoding, audit_kfold=True, response_unit="mm",
+                       arms=("blind", "readings", "encoded")).run(data)
     print(res.report("mm"))
     return 0
 
@@ -42,7 +43,8 @@ def _cmd_diagnose(args):
 def _cmd_run(args):
     df = pd.read_csv(args.csv)
     cfg = CavityConfig.from_json(args.config)
-    res = CavityWorkflow(cfg, _default_model(), encoding=args.encoding, margin=args.margin, audit_kfold=args.audit).run(df)
+    res = CavityWorkflow(cfg, _default_model(), encoding=args.encoding, margin=args.margin, audit_kfold=args.audit,
+                       arms=("blind", "readings", "encoded") if args.readings else ("blind", "encoded")).run(df)
     print(res.report())
     return 0
 
@@ -68,6 +70,7 @@ def main(argv=None) -> int:
     r.add_argument("--config", required=True, help="JSON file written by CavityConfig.to_json")
     r.add_argument("--encoding", default="onehot", choices=["onehot", "target", "integer", "auto"])
     r.add_argument("--margin", type=float, default=2.0)
+    r.add_argument("--readings", action="store_true", help="also train R1, the cavity readings without the label")
     r.add_argument("--audit", action="store_true", help="also measure the leakage of ordinary K-fold")
     r.set_defaults(func=_cmd_run)
 
