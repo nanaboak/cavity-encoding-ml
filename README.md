@@ -67,7 +67,7 @@ print(result.report())
 print(result.verdict)                      # "use_cavity", "adds_noise" or "no_cavity_effect"
 ```
 
-The workflow trains the model twice on identical shot-grouped folds, without and with the cavity label, and then decides. Add `arms=("blind", "readings", "encoded")` to also see the cavity readings without the label (R1), and `audit_kfold=True` to also measure how much ordinary K-fold would flatter the result. Both are optional and cost extra training time.
+The workflow trains the model three times on identical shot-grouped folds: cavity-blind (R0), with the cavity sensor readings only (R1) and with the cavity label. The report explains in plain sentences how much the readings and the label each lower the error, whether that gain is larger than the normal spread between folds, and whether you should keep the label. Use `arms=("blind", "encoded")` to skip R1 and save one training run, and `audit_kfold=True` to also measure how much ordinary K-fold would flatter the result.
 
 If your data have no cavity sensors, leave `sensors` empty. The package then compares the model with and without the cavity label alone.
 

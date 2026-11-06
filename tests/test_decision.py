@@ -38,3 +38,13 @@ def test_zero_jitter():
 def test_report_and_dict():
     d = decide(0.3, 0.05)
     assert d.report().startswith("STEP 4") and d.to_dict()["verdict"] == "use_cavity"
+
+
+
+def test_messages_are_recommendations():
+    assert decide(0.5, 0.09, gain=0.13).message.startswith("Recommendation: keep")
+    assert "lowered the error by 13.0 %" in decide(0.5, 0.09, gain=0.13).message
+    assert "did not lower" in decide(0.5, 0.09, gain=-0.01).message
+    assert "within that spread" in decide(0.011, 0.037, gain=0.013).message
+    assert decide(0.1, 0.05, diagnostic_passed=False).message.startswith("Recommendation: leave")
+    assert decide(0.5, 0.09).gain != decide(0.5, 0.09).gain  # nan without a measured gain

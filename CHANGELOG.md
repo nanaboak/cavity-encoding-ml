@@ -2,6 +2,17 @@
 
 All notable changes are listed here. The project follows semantic versioning.
 
+## 0.3.0 - 2026-11-04
+
+Reports that explain themselves.
+
+- Step 3 ends with a `Result:` paragraph in plain language. It states how much the cavity sensor readings (R1) and the cavity label each lower the error, and whether the gain comes mainly from the sensors or from the label. Whether the gain is large enough to rely on stays the job of Step 4.
+- Step 3 confirms when the folds are free of leakage, and the table now also shows R².
+- Step 4 starts with a clear `Recommendation:` and explains the reason and what to do next. It also mentions the gain measured in the run.
+- `CavityWorkflow` trains R1 again by default (`arms=("blind", "readings", "encoded")`), so the gain of the sensors and of the label can be told apart. `arms=("blind", "encoded")` keeps the faster setting of 0.2.0.
+- New `ValidationResult.interpretation()` and an optional `gain` argument for `decide`.
+- Command line: `--no-readings` skips R1. `--readings` is kept and has no effect.
+
 ## 0.2.0 - 2026-11-03
 
 Leaner validation. Nothing is removed and old calls still work.

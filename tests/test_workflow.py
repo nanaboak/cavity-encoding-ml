@@ -78,11 +78,18 @@ def test_bundled_example_passes_diagnostic():
     assert d.passed and d.F > 100 and 0.4 < d.separation < 0.65
 
 
-def test_workflow_default_is_lean(toy, toy_cfg):
+def test_workflow_default_has_readings(toy, toy_cfg):
     rf = RandomForestRegressor(n_estimators=20, random_state=0)
     r = CavityWorkflow(toy_cfg, rf).run(toy)
-    assert set(r.validation.arms) == {"blind", "encoded"}
-    assert "R1" not in r.report() and "Leakage audit" not in r.report()
+    assert set(r.validation.arms) == {"blind", "readings", "encoded"}
+    assert "R1 cavity readings" in r.report() and "Leakage audit" not in r.report()
+    assert "Recommendation:" in r.report() and "Result:" in r.report()
+
+
+def test_workflow_lean(toy, toy_cfg):
+    rf = RandomForestRegressor(n_estimators=20, random_state=0)
+    r = CavityWorkflow(toy_cfg, rf, arms=("blind", "encoded")).run(toy)
+    assert set(r.validation.arms) == {"blind", "encoded"} and "R1" not in r.report()
 
 
 def test_workflow_with_readings(toy, toy_cfg):

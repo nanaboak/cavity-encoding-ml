@@ -147,3 +147,16 @@ def test_arms_invalid(toy, toy_cfg, rf):
         validate_cavity_encoding(toy, toy_cfg, rf, arms=("blind", "nonsense"))
     with pytest.raises(ValueError):
         validate_cavity_encoding(toy, toy_cfg, rf, arms=())
+
+
+
+def test_interpretation_full(toy, toy_cfg, ridge):
+    v = validate_cavity_encoding(toy, toy_cfg, ridge)
+    text = " ".join(v.interpretation())
+    assert "sensor readings" in text and "cavity label" in text
+    assert "Result:" in v.report() and "No leakage" in v.report()
+
+
+def test_interpretation_encoded_only(toy, toy_cfg, ridge):
+    v = validate_cavity_encoding(toy, toy_cfg, ridge, arms=("encoded",))
+    assert "RMSE" in " ".join(v.interpretation())

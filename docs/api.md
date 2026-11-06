@@ -30,7 +30,7 @@ Fields: `F`, `df1`, `df2`, `p_value`, `partial_eta2`, `sigma_blind`, `sigma_nois
 **`LeakageWarning`**, **`LeakageError`**
 
 **`validate_cavity_encoding(data, config, model, encoding="onehot", cv=None, smoothing=10.0, response_unit="", warn=True) -> ValidationResult`**
-`arms` chooses which models are trained: any of `"blind"`, `"readings"` and `"encoded"`, default all three; `("encoded",)` cross-validates only the model with the label. `ValidationResult` has `arms["blind" | "readings" | "encoded"]`, `jitter`, `leakage_share`, `grouped`, `gain(arm)` and `report()`. Each `ArmResult` has `rmse`, `mae`, `r2`, `fold_rmse`, `oof`, `jitter`.
+`arms` chooses which models are trained: any of `"blind"`, `"readings"` and `"encoded"`, default all three; `("encoded",)` cross-validates only the model with the label. `ValidationResult` has `arms["blind" | "readings" | "encoded"]`, `jitter`, `leakage_share`, `grouped`, `gain(arm)`, `interpretation()` (plain-language sentences) and `report()`. Each `ArmResult` has `rmse`, `mae`, `r2`, `fold_rmse`, `oof`, `jitter`.
 
 **`compare_encodings(data, config, model, encodings=(...), **kwargs)`**
 
@@ -40,12 +40,12 @@ Fields: `F`, `df1`, `df2`, `p_value`, `partial_eta2`, `sigma_blind`, `sigma_nois
 
 ## Step 4
 
-**`decide(separation, jitter, margin=2.0, diagnostic_passed=True) -> Decision`**, **`decide_from(diagnostic, validation, margin=2.0)`**
+**`decide(separation, jitter, margin=2.0, diagnostic_passed=True, gain=nan) -> Decision`**, **`decide_from(diagnostic, validation, margin=2.0)`**
 `Decision.verdict` is `"use_cavity"`, `"adds_noise"` or `"no_cavity_effect"`.
 
 ## Workflow and tools
 
-**`CavityWorkflow(config, model, encoding="onehot", margin=2.0, cv=None, audit_kfold=False, alpha=0.05, min_partial_eta2=0.01, response_unit="", always_validate=False, arms=("blind", "encoded"))`** with `run(data) -> WorkflowResult` and `CavityWorkflow.from_config(path, model)`.
+**`CavityWorkflow(config, model, encoding="onehot", margin=2.0, cv=None, audit_kfold=False, alpha=0.05, min_partial_eta2=0.01, response_unit="", always_validate=False, arms=("blind", "readings", "encoded"))`** with `run(data) -> WorkflowResult` and `CavityWorkflow.from_config(path, model)`.
 
 **`screen_outliers(response, cavity, threshold=3.5, boxcox=True)`** returns a mask of parts to keep.
 
@@ -58,5 +58,5 @@ Fields: `F`, `df1`, `df2`, `p_value`, `partial_eta2`, `sigma_blind`, `sigma_nois
 ```
 cavity-encoding-ml example [--encoding onehot|target|integer|auto]
 cavity-encoding-ml diagnose data.csv --shot ID --cavity CAV --response Y
-cavity-encoding-ml run data.csv --config config.json [--encoding ...] [--margin 2] [--readings] [--audit]
+cavity-encoding-ml run data.csv --config config.json [--encoding ...] [--margin 2] [--no-readings] [--audit]
 ```

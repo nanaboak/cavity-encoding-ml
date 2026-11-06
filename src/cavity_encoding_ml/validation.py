@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import textwrap
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
@@ -12,6 +13,14 @@ from .encoding import choose_encoding
 from .mapper import CavityConfig, CavityMapper
 from .models import make_model
 from .splitting import RepeatedRowKFold, ShotGroupKFold, check_splits, sibling_share
+
+_R2 = "R\u00b2"
+_ENC_NAME = {"onehot": "one-hot", "target": "target-encoded", "integer": "integer"}
+
+
+def _wrap(text: str, width: int = 92) -> str:
+    return textwrap.fill(text, width=width, initial_indent="  ", subsequent_indent="  ")
+
 
 _ENC_TO_REP = {"integer": "R2", "onehot": "R3", "target": "R4"}
 _ARM_REP = {"blind": "R0", "readings": "R1", "encoded": None}
@@ -79,36 +88,95 @@ class ValidationResult:
             return float("nan")
         return float(1.0 - self.arms[arm].rmse / self.blind.rmse)
 
+    def interpretation(self) -> List[str]:
+        """Plain-language reading of the validation result, one sentence per entry."""
+        u = f" {self.response_unit}" if self.response_unit else ""
+        enc = _ENC_NAME.get(self.encoding, self.encoding)
+        if "encoded" not in self.arms:
+            return []
+        e = self.encoded
+        if "blind" not in self.arms:
+            return [
+                f"The model with the {enc} cavity label reaches an RMSE of {e.rmse:.4g}{u} and an "
+                f"R\u00b2 of {e.r2:.2f} on shots it has not seen during training.",
+                "Run it together with the cavity-blind model (arms blind and encoded) to find out "
+                "whether the label is responsible for this accuracy.",
+            ]
+        out = []
+        total = self.gain("encoded")
+        has_r1 = "readings" in self.arms
+        if has_r1:
+            g1 = self.gain("readings")
+            extra = float(1.0 - e.rmse / self.readings.rmse)
+            if g1 > 0:
+                out.append(f"The cavity sensor readings alone lower the error by {100 * g1:.1f} % "
+                           "compared with the cavity-blind model.")
+            else:
+                out.append(f"The cavity sensor readings alone do not help, they raise the error by "
+                           f"{100 * -g1:.1f} %.")
+            out.append(f"Adding the {enc} cavity label {'lowers' if extra > 0 else 'raises'} the "
+                       f"error by a further {100 * abs(extra):.1f} %, which gives "
+                       f"{100 * total:+.1f} % in total against the cavity-blind model.")
+        else:
+            out.append(f"The {enc} cavity label {'lowers' if total > 0 else 'raises'} the error by "
+                       f"{100 * abs(total):.1f} % compared with the cavity-blind model.")
+        if total > 0 and has_r1:
+            if extra <= 0:
+                out.append("In this run the gain comes from the sensor readings, and the label "
+                           "adds nothing on top of them.")
+            elif g1 <= 0:
+                out.append("In this run the gain comes from the label alone, which points to "
+                           "cavity differences, such as gate distance, cooling or wear, that the "
+                           "sensors do not record.")
+            elif extra > g1:
+                out.append("In this run most of the gain comes from the label, which points to "
+                           "cavity differences that the sensors do not record.")
+            else:
+                out.append("In this run most of the gain comes from the sensor readings, and the "
+                           "label adds a smaller extra step.")
+        if total > 0:
+            out.append("Step 4 checks whether a gain of this kind is large enough to rely on.")
+        else:
+            out.append("Cavity information does not improve on the cavity-blind model in this "
+                       "run.")
+        return out
+
     def report(self) -> str:
         u = f" {self.response_unit}" if self.response_unit else ""
         lines = [
             "STEP 3  Validation",
             f"  folds {self.n_folds}, parts of a test shot also in training: {100 * self.leakage_share:.1f} %",
         ]
-        if not self.grouped:
+        if self.grouped:
+            lines.append(_wrap("No leakage. Every shot stays in one fold, so the errors below are "
+                               "honest estimates for new shots."))
+        else:
             lines.append(
                 "  ALERT. The folds are not grouped by shot, so the RMSE below is too optimistic."
                 " Use ShotGroupKFold for a multi-cavity mold."
             )
         show_gain = "blind" in self.arms
-        head = f"  {'model input':<34}{'RMSE' + u:>14}"
+        head = f"  {'model input':<34}{'RMSE' + u:>14}{_R2:>8}"
         lines.append(head + (f"{'gain vs blind':>16}" if show_gain else ""))
         labels = {
             "blind": "R0 cavity-blind",
             "readings": "R1 cavity readings, no label",
-            "encoded": f"{self.encoded.representation} + {self.encoding} label",
+            "encoded": f"{self.encoded.representation} + {self.encoding} label" if "encoded" in self.arms else "",
         }
         for key in ("blind", "readings", "encoded"):
             if key not in self.arms:
                 continue
             a = self.arms[key]
             g = "" if (key == "blind" or not show_gain) else f"{100 * self.gain(key):+.1f} %"
-            lines.append(f"  {labels[key]:<34}{a.rmse:>14.4g}{g:>16}")
+            lines.append(f"  {labels[key]:<34}{a.rmse:>14.4g}{a.r2:>8.2f}{g:>16}")
         if show_gain:
             lines.append(
                 f"  fold-to-fold jitter of the blind model: {100 * self.jitter:.1f} % "
                 f"(SD {self.blind.fold_std:.3g} / mean {self.blind.fold_mean:.3g})"
             )
+        text = self.interpretation()
+        if text:
+            lines.append(_wrap("Result: " + " ".join(text)))
         return "\n".join(lines)
 
     def __str__(self) -> str:  # pragma: no cover - convenience
